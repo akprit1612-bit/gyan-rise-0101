@@ -1,38 +1,48 @@
-# PRD — GYAN RISE RANA E-LEARNING (Imported from GitHub)
+# GYAN RISE RANA E-LEARNING — PRD
 
-## Original Problem Statement
-> https://github.com/skrajputchauhan01016353-afk/app.git
-> "Clone and set up the existing code to run it. Import the existing code exactly as it is. Do not modify, refactor, redesign, or add features. Just analyze and preserve the current codebase unchanged."
+## Problem
+Production-ready Coaching LMS inspired by Physics Wallah for institutes managing batches, subjects, chapters, recorded videos, PDF notes, MCQ tests, YouTube live classes with real-time chat, and student progress.
 
-## Tech Stack (detected)
-- Backend: FastAPI + Motor (MongoDB async) + JWT auth + bcrypt + Razorpay + Firebase Admin (FCM)
-- Frontend: React 19 + CRA/CRACO + Tailwind + Radix UI + react-router-dom 7 + Firebase Web SDK
-- DB: MongoDB (local, `test_database`)
+## Stack
+- Backend: FastAPI + MongoDB (motor) + WebSocket chat
+- Frontend: React 19 + Tailwind + Shadcn UI + React Router 7
+- Auth: JWT in cookie + Bearer header, bcrypt
+- Branding: Blue (#1D4ED8) + Orange (#F97316) + White
 
-## What's been done (Jan 2026)
-- Imported the GitHub repo exactly as-is into `/app` (backend, frontend, credentials/, design_guidelines.json, tests, etc.)
-- Preserved protected `.env` values (MONGO_URL, DB_NAME, REACT_APP_BACKEND_URL)
-- Added required env vars for the app to boot: `JWT_SECRET`, `ADMIN_EMAIL/PASSWORD`, `STUDENT_EMAIL/PASSWORD`, `CORS_ORIGINS`
-- Credentials match the demo hints baked into the existing UI (`student@lms.com / student123`, `admin@lms.com / admin123`)
-- Installed backend `requirements.txt` (firebase-admin, emergentintegrations, etc.) and ran `yarn install` for frontend
-- Restarted supervisor; both backend & frontend are RUNNING
-- Verified: `/api/auth/login` returns 200 for both admin and student; frontend `/login` page renders correctly
+## Personas
+- **Admin** (manually provisioned, NOT publicly registerable): full CRUD on batches/subjects/chapters/videos/notes/tests/live classes/students; can pin & delete chat messages
+- **Student** (self-registers): enrolled in batches, watches videos with watermark, downloads notes, takes MCQ tests, joins live classes with real-time chat
 
-## Architecture
-- Backend: `/app/backend/server.py` — single-file FastAPI app, all routes under `/api`
-- Frontend: `/app/frontend/src/` — pages split by `student/` and `admin/`, AuthContext, AppLayout
-- Routes (frontend): `/login`, `/admin-login`, `/register`, `/dashboard`, `/batches`, `/admin/*` etc.
+## Iteration 1 (2026-02) — initial build
+- JWT auth, role-based RBAC, seeded demo accounts
+- Batch → Subject → Chapter → Videos / Notes / MCQ Tests taxonomy
+- Student dashboard, video player with prev/next, MCQ test taker with timer, live class viewer
+- Admin CRUD across all entities
 
-## Optional integrations (left as-is, NOT configured)
-The following env vars are referenced by the imported code but NOT set (left empty). The corresponding features will return errors if invoked, exactly matching the original repo behavior:
-- `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` — paid batch checkout
-- `FCM_SERVER_KEY` and `credentials/firebase-service-account.json` — push notifications
-- Frontend Firebase Web config (`REACT_APP_FIREBASE_*`, `REACT_APP_FCM_VAPID_KEY`) — push notifications
+## Iteration 2 (2026-02) — GYAN RISE RANA upgrade
+- **Branding**: full rename to GYAN RISE RANA E-LEARNING, browser title, Blue+Orange palette
+- **Auth fix**: register endpoint hard-coded to role=student; admin accounts only manually
+- **Live Chat**: WebSocket `/api/ws/chat/{lc}` — broadcast messages, presence, admin pin/delete; chat history persisted in `chat_messages` collection
+- **Video Watermark**: floating overlay with student name/email/date/time, animated drift
+- **Image Upload**: `/api/uploads/image` (admin, multipart, 4 MB cap) + `/api/images/{id}` serve, used for batch & subject covers; existing URL field still supported
+- **Recently Viewed** (`/recent`) + **Continue Watching** (already on dashboard)
+- **Course Completion**: `/api/progress/completion/{batch_id}` returns overall + per-subject %
+- **Role Guard**: students redirected away from `/admin/*` automatically
+- **Android prep**: documented FLAG_SECURE setup in `ANDROID_WEBVIEW.md`, mobile meta tags, no-context CSS, user-select disabled
+- **Seed idempotent**: canonical batches restored on each startup if missing
 
-User explicitly said "No change required, keep anything exactly as in the github repositories import only", so these are intentionally not configured.
+## Test results
+- Iteration 1: 17/17 backend, all frontend flows
+- Iteration 2: 8/8 backend, all frontend flows (chat, watermark, image upload, completion, role guard)
 
-## Backlog (for future iterations, only if user asks)
-- P1: Configure Razorpay keys to enable paid-batch checkout flow
-- P1: Configure Firebase service account + web config to enable FCM push notifications
-- P2: Run testing agent on full feature surface
-- P2: Build/deploy validations
+## Architecture-ready (not implemented)
+- Razorpay paid enrollment
+- Native Android WebView wrapper (guide ready in `/app/memory/ANDROID_WEBVIEW.md`)
+- Object-storage backed image hosting (currently base64 in DB — fine for cover images)
+
+## Backlog
+- **P1**: chat message editing, batch search/filter, real HTML5 video progress events
+- **P2**: Razorpay paid enrollment, Android wrapper, bulk MCQ CSV import, certificates, leaderboards, push notifications
+
+## Test Credentials
+See `/app/memory/test_credentials.md`.
