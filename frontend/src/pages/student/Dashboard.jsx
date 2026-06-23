@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import FounderCard from "@/components/FounderCard";
 import DeveloperFooter from "@/components/DeveloperFooter";
+import SupportFAB from "@/components/SupportFAB";
 
 function SectionHeader({ title, action, kicker }) {
   return (
@@ -245,6 +246,9 @@ export default function StudentDashboard() {
 
       {/* Platform development credit */}
       <DeveloperFooter />
+
+      {/* Floating customer-support button */}
+      <SupportFAB />
     </div>
   );
 }
