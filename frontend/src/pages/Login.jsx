@@ -4,8 +4,10 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap, ArrowRight, Sparkles, ShieldCheck } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { GraduationCap, ArrowRight, Sparkles, ShieldCheck, UserPlus, Mail, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { api } from "@/lib/apiClient";
 
 export default function Login() {
   const { login } = useAuth();
@@ -14,6 +16,12 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+
+  // Forgot-password modal state
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -27,7 +35,25 @@ export default function Login() {
     finally { setLoading(false); }
   };
 
-  const quickFillStudent = () => { setEmail("student@lms.com"); setPassword("student123"); };
+  const submitForgot = async (e) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    try {
+      await api.post("/auth/forgot-password", { email: forgotEmail });
+      setForgotSent(true);
+    } catch (err) {
+      // Backend intentionally returns 200 even if email not found (no enumeration);
+      // any error here is a transport/server issue.
+      toast.error(err?.response?.data?.detail || "Could not process request. Please try again.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const closeForgot = () => {
+    setForgotOpen(false);
+    setTimeout(() => { setForgotEmail(""); setForgotSent(false); }, 300);
+  };
 
   return (
     <div className="min-h-screen grid lg:grid-cols-5 bg-white">
@@ -85,19 +111,54 @@ export default function Login() {
               <div className="text-[11px] uppercase tracking-[0.18em] text-[#F97316] font-bold mt-1">RANA E-LEARNING</div>
             </div>
           </div>
+
           <div className="text-xs uppercase tracking-[0.3em] text-[#1D4ED8] mb-3 font-semibold">Welcome back</div>
           <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
             Sign in to your account
           </h2>
           <p className="text-slate-500 mt-2 text-sm">Pick up right where you left off.</p>
 
-          <form onSubmit={submit} className="mt-8 space-y-4" data-testid="login-form">
+          {/* Registration call-out — prominent, above the form */}
+          <div className="mt-6 rounded-xl border border-[#FED7AA] bg-gradient-to-br from-orange-50 to-white p-4 shadow-sm" data-testid="new-student-callout">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-lg bg-[#F97316] text-white grid place-items-center shrink-0">
+                <UserPlus className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-slate-900">New to GYAN RISE?</div>
+                <div className="text-xs text-slate-600 mt-0.5">Create your free student account in under a minute.</div>
+              </div>
+            </div>
+            <Link to="/register" data-testid="goto-register">
+              <Button type="button" className="mt-3 w-full h-11 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-lg font-semibold shadow-sm" data-testid="create-student-account-button">
+                Create Student Account <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="my-6 flex items-center gap-3">
+            <div className="flex-1 h-px bg-slate-200" />
+            <div className="text-[11px] uppercase tracking-[0.25em] text-slate-400 font-semibold">Already have an account?</div>
+            <div className="flex-1 h-px bg-slate-200" />
+          </div>
+
+          <form onSubmit={submit} className="space-y-4" data-testid="login-form">
             <div>
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="mt-1.5 rounded-lg h-11" required data-testid="login-email-input" />
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <button
+                  type="button"
+                  onClick={() => setForgotOpen(true)}
+                  className="text-xs font-semibold text-[#1D4ED8] hover:text-[#1E40AF] hover:underline"
+                  data-testid="login-forgot-password-link"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="mt-1.5 rounded-lg h-11" required data-testid="login-password-input" />
             </div>
             {err && (
@@ -108,25 +169,71 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-6">
-            <div className="text-xs uppercase tracking-widest text-slate-400 mb-2">Demo student account</div>
-            <button type="button" onClick={quickFillStudent} className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-left hover:bg-blue-50 hover:border-blue-200 transition-colors" data-testid="demo-student-btn">
-              <div className="font-semibold text-slate-800">Try as Student</div>
-              <div className="text-xs text-slate-500">student@lms.com · click to autofill</div>
-            </button>
-          </div>
-
-          <p className="mt-8 text-sm text-slate-500">
-            New here?{" "}
-            <Link to="/register" className="text-[#1D4ED8] font-semibold hover:underline" data-testid="goto-register">
-              Create a student account
-            </Link>
-          </p>
-          <p className="mt-2 text-[11px] text-slate-400">
+          <p className="mt-8 text-[11px] text-slate-400">
             This is the student portal. Authorized institute staff: please use your private admin URL.
           </p>
         </div>
       </div>
+
+      {/* Forgot-password modal */}
+      <Dialog open={forgotOpen} onOpenChange={(open) => (open ? setForgotOpen(true) : closeForgot())}>
+        <DialogContent data-testid="forgot-password-dialog">
+          {!forgotSent ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5 text-[#1D4ED8]" /> Reset your password
+                </DialogTitle>
+                <DialogDescription>
+                  Enter the email you used to register. We'll send a password reset link to that address.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={submitForgot} className="space-y-4 mt-2">
+                <div>
+                  <Label htmlFor="forgot-email">Registered email</Label>
+                  <Input
+                    id="forgot-email"
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="mt-1.5 rounded-lg h-11"
+                    required
+                    data-testid="forgot-password-email-input"
+                  />
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button type="button" variant="outline" onClick={closeForgot} data-testid="forgot-password-cancel">
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={forgotLoading} className="bg-[#1D4ED8] hover:bg-[#1E40AF] text-white" data-testid="forgot-password-submit">
+                    {forgotLoading ? "Sending..." : "Send reset link"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-emerald-700">
+                  <CheckCircle2 className="h-5 w-5" /> Check your inbox
+                </DialogTitle>
+                <DialogDescription>
+                  If an account exists for <span className="font-semibold text-slate-800">{forgotEmail}</span>, we've sent a password reset link to it. The link will expire in 30 minutes.
+                </DialogDescription>
+              </DialogHeader>
+              <p className="text-xs text-slate-500 mt-2">
+                Didn't receive an email? Check your spam folder, or contact your institute admin for help.
+              </p>
+              <DialogFooter>
+                <Button onClick={closeForgot} className="bg-[#1D4ED8] hover:bg-[#1E40AF] text-white" data-testid="forgot-password-done">
+                  Done
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

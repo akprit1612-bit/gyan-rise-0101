@@ -397,6 +397,67 @@ async def register_fcm_token(body: FcmTokenIn, user: dict = Depends(get_current_
     return {"ok": True}
 
 
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+@api.post("/auth/forgot-password")
+async def forgot_password(body: ForgotPasswordIn):
+    """Generate a password-reset token for the given email.
+
+    Always returns a generic success response (anti-enumeration). When an email
+    provider is configured, the reset link will be sent to the user; until then
+    the token is stored in the DB and can be retrieved by an admin to share with
+    the student out of band.
+    """
+    email = body.email.lower()
+    user = await db.users.find_one({"email": email})
+    if user:
+        token = new_id()
+        await db.password_resets.insert_one(
+            {
+                "id": new_id(),
+                "user_id": user["id"],
+                "email": email,
+                "token": token,
+                "used": False,
+                "created_at": now_iso(),
+                "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat(),
+            }
+        )
+        frontend = os.environ.get("FRONTEND_URL", "").rstrip("/")
+        reset_link = f"{frontend}/reset-password?token={token}" if frontend else f"/reset-password?token={token}"
+        # TODO: wire an email provider (SendGrid / Resend / SES) to deliver `reset_link` to `email`.
+        logger.info(f"[forgot-password] reset link for {email}: {reset_link}")
+    # Always 200 — do not reveal whether the email exists.
+    return {"ok": True, "message": "If an account exists for that email, a reset link has been sent."}
+
+
+class ResetPasswordIn(BaseModel):
+    token: str
+    new_password: str = Field(min_length=6)
+
+
+@api.post("/auth/reset-password")
+async def reset_password(body: ResetPasswordIn):
+    """Consume a password-reset token and set a new password."""
+    record = await db.password_resets.find_one({"token": body.token, "used": False})
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid or already-used reset token")
+    try:
+        expires_at = datetime.fromisoformat(record["expires_at"])
+    except Exception:
+        expires_at = None
+    if expires_at and datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    await db.users.update_one(
+        {"id": record["user_id"]},
+        {"$set": {"password_hash": hash_password(body.new_password)}},
+    )
+    await db.password_resets.update_one({"id": record["id"]}, {"$set": {"used": True, "used_at": now_iso()}})
+    return {"ok": True, "message": "Password updated. Please sign in with your new password."}
+
+
 @api.get("/auth/me", response_model=UserPublic)
 async def me(user: dict = Depends(get_current_user)):
     return user
