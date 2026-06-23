@@ -1,5 +1,5 @@
 import React from "react";
-import { Code2, Sparkles } from "lucide-react";
+import { Code2, Sparkles, Phone } from "lucide-react";
 
 /**
  * DeveloperFooter
@@ -27,6 +27,15 @@ export default function DeveloperFooter({ className = "" }) {
               <span data-testid="developer-name">Shivam Chauhan</span>
               <span className="text-slate-400 font-normal"> · Web Application Developer</span>
             </div>
+            <a
+              href="tel:+918858166635"
+              data-testid="developer-phone"
+              className="mt-1 inline-flex items-center gap-1.5 text-[12px] text-slate-600 hover:text-[#1D4ED8] transition-colors"
+              aria-label="Call developer at 8858166635"
+            >
+              <Phone className="h-3 w-3" />
+              <span className="font-medium tracking-wide">8858166635</span>
+            </a>
           </div>
         </div>
         <div className="hidden sm:inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-[#1D4ED8] font-semibold">
