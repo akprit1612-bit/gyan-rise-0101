@@ -39,7 +39,7 @@ export default function SupportFAB() {
         aria-label={open ? "Close customer support" : "Open customer support"}
         aria-expanded={open}
         data-testid="support-fab-button"
-        className={`fixed z-[60] bottom-5 right-5 sm:bottom-6 sm:right-6 h-14 w-14 sm:h-15 sm:w-15 rounded-full shadow-xl shadow-emerald-600/30
+        className={`fixed z-[60] bottom-12 right-5 sm:right-6 h-14 w-14 sm:h-15 sm:w-15 rounded-full shadow-xl shadow-emerald-600/30
           flex items-center justify-center text-white transition-all duration-300
           ${open
             ? "bg-slate-900 hover:bg-slate-800 rotate-90"
@@ -67,7 +67,7 @@ export default function SupportFAB() {
           aria-modal="true"
           aria-labelledby="support-card-title"
           data-testid="support-fab-card"
-          className="fixed z-[60] bottom-24 right-4 sm:right-6 left-4 sm:left-auto w-auto sm:w-[340px] rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden grr-pop-in"
+          className="fixed z-[60] bottom-32 right-4 sm:right-6 left-4 sm:left-auto w-auto sm:w-[340px] rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden grr-pop-in"
         >
           {/* Header */}
           <div className="grr-hero-gradient px-5 py-4 text-white">
