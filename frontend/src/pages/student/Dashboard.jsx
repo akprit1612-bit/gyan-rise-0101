@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { FileText, ClipboardList, PlayCircle, ArrowRight, Sparkles, Flame, Zap, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import FounderCard from "@/components/FounderCard";
 
 function SectionHeader({ title, action, kicker }) {
   return (
@@ -91,6 +92,9 @@ export default function StudentDashboard() {
           </div>
         </div>
       </section>
+
+      {/* Founder welcome */}
+      <FounderCard />
 
       {/* Progress overview */}
       {batches.length > 0 && (

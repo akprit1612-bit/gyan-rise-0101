@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { GraduationCap, ArrowRight, Sparkles, ShieldCheck, UserPlus, Mail, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/apiClient";
+import FounderCard from "@/components/FounderCard";
 
 export default function Login() {
   const { login } = useAuth();
@@ -172,6 +173,9 @@ export default function Login() {
           <p className="mt-8 text-[11px] text-slate-400">
             This is the student portal. Authorized institute staff: please use your private admin URL.
           </p>
+
+          {/* Founder welcome */}
+          <FounderCard variant="compact" className="mt-8" />
         </div>
       </div>
 
