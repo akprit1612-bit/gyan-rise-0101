@@ -25,7 +25,20 @@ import hashlib
 import httpx
 
 mongo_url = os.environ["MONGO_URL"]
-client = AsyncIOMotorClient(mongo_url)
+# Production-safe Motor client config:
+#   * serverSelectionTimeoutMS — fail fast if Atlas is unreachable (10s instead of 30s default)
+#   * connectTimeoutMS / socketTimeoutMS — bound per-connection latency
+#   * retryWrites — auto-retry one-shot write failures (replica set primary swap, etc.)
+#   * maxPoolSize — keep connections bounded on Render's small dynos
+# Motor/PyMongo handle auto-reconnect to a new primary internally; no manual retry needed.
+client = AsyncIOMotorClient(
+    mongo_url,
+    serverSelectionTimeoutMS=10000,
+    connectTimeoutMS=10000,
+    socketTimeoutMS=20000,
+    retryWrites=True,
+    maxPoolSize=50,
+)
 db = client[os.environ["DB_NAME"]]
 
 app = FastAPI(title="GYAN RISE RANA E-LEARNING API")
