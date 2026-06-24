@@ -25,6 +25,7 @@ export default function BatchDetail() {
     setSubjects(s);
     setLoading(false);
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [batchId]);
 
   if (loading) return <Skeleton className="h-64 w-full rounded-lg" />;
