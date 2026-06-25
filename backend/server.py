@@ -45,10 +45,20 @@ app = FastAPI(title="GYAN RISE RANA E-LEARNING API")
 api = APIRouter(prefix="/api")
 
 JWT_ALGORITHM = "HS256"
+DEFAULT_FRONTEND_URL = "https://gyan-rise-0101.vercel.app"
 
 
 def get_jwt_secret() -> str:
     return os.environ["JWT_SECRET"]
+
+
+def get_frontend_url() -> str:
+    return os.environ.get("FRONTEND_URL", DEFAULT_FRONTEND_URL).rstrip("/")
+
+
+def get_cors_origins() -> List[str]:
+    origins = os.environ.get("CORS_ORIGINS", DEFAULT_FRONTEND_URL)
+    return [origin.strip() for origin in origins.split(",") if origin.strip()]
 
 
 def hash_password(password: str) -> str:
@@ -263,7 +273,7 @@ def resolve_notification_url(url: Optional[str]) -> str:
         return "/"
     if url.startswith("http://") or url.startswith("https://"):
         return url
-    frontend = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    frontend = get_frontend_url()
     return f"{frontend}{url}" if frontend else url
 
 
@@ -1504,7 +1514,7 @@ app.include_router(api)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_origins=get_cors_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
 )

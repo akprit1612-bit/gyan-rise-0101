@@ -48,7 +48,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
-          cache-dependency-path: yarn.lock
+          cache-dependency-path: frontend/yarn.lock
 
       - name: Setup JDK 17
         uses: actions/setup-java@v4

@@ -9,7 +9,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const LIVE_URL =
   process.env.CAPACITOR_LIVE_URL ||
   process.env.REACT_APP_BACKEND_URL ||
-  'https://app-dev-358.preview.emergentagent.com';
+  'https://gyan-rise-0101.vercel.app';
 
 const config: CapacitorConfig = {
   appId: 'com.gyanrise.lms',
