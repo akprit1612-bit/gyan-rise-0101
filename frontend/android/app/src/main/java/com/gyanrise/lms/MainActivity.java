@@ -47,7 +47,7 @@ public class MainActivity extends BridgeActivity {
      * plugin or temporary dialog ever clears it.
      */
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         getWindow().setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
