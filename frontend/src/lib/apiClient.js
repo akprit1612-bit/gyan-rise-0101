@@ -1,12 +1,16 @@
 import axios from "axios";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-export const API_BASE = `${BACKEND_URL}/api`;
+// Use the build-time environment variable when available. When it's
+// not provided (e.g. during a misconfigured deployment), fall back to
+// the production backend URL so Vercel production builds still work.
+const RAW_BACKEND = process.env.REACT_APP_BACKEND_URL || "https://gyan-rise-0101.onrender.com";
+const BACKEND_URL = RAW_BACKEND.replace(/\/$/, "");
+export const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : "/api";
 
 /** Resolve a possibly-relative API image URL to an absolute URL. */
 export function resolveImage(url) {
   if (!url) return url;
-  if (url.startsWith("/api/")) return BACKEND_URL + url;
+  if (url.startsWith("/api/")) return (BACKEND_URL ? BACKEND_URL : "") + url;
   return url;
 }
 
