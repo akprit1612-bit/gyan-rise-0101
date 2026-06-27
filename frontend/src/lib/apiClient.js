@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://gyan-rise-0101.onrender.com";
 export const API_BASE = `${BACKEND_URL}/api`;
 
 /** Resolve a possibly-relative API image URL to an absolute URL. */
