@@ -21,7 +21,7 @@ public class MainActivity extends BridgeActivity {
      * Activity lifecycle hook.
      */
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
     }
 }
