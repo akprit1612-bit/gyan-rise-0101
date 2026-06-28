@@ -70,7 +70,7 @@ export default function Login() {
             </div>
             <div>
               <div className="font-display font-extrabold text-xl tracking-tight leading-none">GYAN RISE</div>
-              <div className="text-[11px] uppercase tracking-[0.25em] text-[#FED7AA] font-bold mt-1">RANA E-LEARNING</div>
+              <div className="text-[11px] uppercase tracking-[0.25em] text-[#FED7AA] font-bold mt-1">Engr. RP Singh, E-Learning</div>
             </div>
           </div>
 
