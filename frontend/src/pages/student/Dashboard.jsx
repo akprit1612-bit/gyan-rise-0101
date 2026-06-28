@@ -72,7 +72,7 @@ export default function StudentDashboard() {
         <div className="absolute inset-0 opacity-20 mix-blend-overlay" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=85&w=1600')", backgroundSize: "cover" }} />
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-[#FED7AA] font-semibold mb-3">
-            <Sparkles className="h-3.5 w-3.5" /> GYAN RISE RANA · Daily Briefing
+            <Sparkles className="h-3.5 w-3.5" /> GYAN RISE · Daily Briefing
           </div>
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tighter leading-[1.05]">
             Hello, {user?.name?.split(" ")[0]} — one chapter today brings you closer to <span className="text-[#FDBA74]">your rank.</span>

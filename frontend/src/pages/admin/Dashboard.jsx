@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-10">
       <div>
-        <div className="text-xs uppercase tracking-[0.25em] text-[#F97316] font-semibold">GYAN RISE RANA · Admin Console</div>
+        <div className="text-xs uppercase tracking-[0.25em] text-[#F97316] font-semibold">GYAN RISE · Admin Console</div>
         <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tighter text-slate-900 mt-1">
           Run your coaching institute, end to end.
         </h1>

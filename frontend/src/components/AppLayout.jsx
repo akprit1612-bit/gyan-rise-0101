@@ -88,7 +88,7 @@ export default function AppLayout() {
             </div>
             <div>
               <div className="font-display font-extrabold tracking-tight text-[15px] leading-none text-slate-900">GYAN RISE</div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-[#F97316] font-bold mt-0.5">Engr. Singh, E-learning</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-[#F97316] font-bold mt-0.5">Engr. RP Singh, E-learning</div>
             </div>
           </div>
           <button className="lg:hidden text-slate-500" onClick={() => setOpen(false)} data-testid="sidebar-close">
@@ -153,7 +153,7 @@ export default function AppLayout() {
             <Menu className="h-5 w-5" />
           </button>
           <div className="hidden lg:block font-display text-sm uppercase tracking-widest text-slate-500">
-            {user?.role === "admin" ? "GYAN RISE RANA — Admin Console" : "GYAN RISE RANA — Student Portal"}
+            {user?.role === "admin" ? "GYAN RISE — Admin Console" : "GYAN RISE — Student Portal"}
           </div>
           <div className="flex items-center gap-3">
             <div className="text-sm text-slate-600 hidden sm:block" data-testid="header-greeting">
