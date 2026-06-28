@@ -70,7 +70,7 @@ export default function Login() {
             </div>
             <div>
               <div className="font-display font-extrabold text-xl tracking-tight leading-none">GYAN RISE</div>
-              <div className="text-[11px] uppercase tracking-[0.25em] text-[#FED7AA] font-bold mt-1">RANA E-LEARNING</div>
+              <div className="text-[11px] uppercase tracking-[0.25em] text-[#FED7AA] font-bold mt-1">Engr. Singh, E-learning</div>
             </div>
           </div>
 
@@ -110,7 +110,7 @@ export default function Login() {
             </div>
             <div>
               <div className="font-display font-extrabold text-lg tracking-tight leading-none text-slate-900">GYAN RISE</div>
-              <div className="text-[11px] uppercase tracking-[0.18em] text-[#F97316] font-bold mt-1">RANA E-LEARNING</div>
+              <div className="text-[11px] uppercase tracking-[0.18em] text-[#F97316] font-bold mt-1">Engr. Singh, E-learning</div>
             </div>
           </div>
 

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="100%" height="100%" fill="#0B1E55"/>
+  <circle cx="90" cy="90" r="60" fill="#F97316" />
+  <g font-family="Inter, Arial, sans-serif" text-anchor="middle">
+    <text x="260" y="220" font-size="72" fill="#fff" font-weight="700">GYAN</text>
+    <text x="260" y="300" font-size="48" fill="#FDBA74" font-weight="700">RISE</text>
+  </g>
+</svg>

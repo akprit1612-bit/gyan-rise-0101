@@ -88,7 +88,7 @@ export default function AppLayout() {
             </div>
             <div>
               <div className="font-display font-extrabold tracking-tight text-[15px] leading-none text-slate-900">GYAN RISE</div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-[#F97316] font-bold mt-0.5">RANA E-LEARNING</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-[#F97316] font-bold mt-0.5">Engr. Singh, E-learning</div>
             </div>
           </div>
           <button className="lg:hidden text-slate-500" onClick={() => setOpen(false)} data-testid="sidebar-close">

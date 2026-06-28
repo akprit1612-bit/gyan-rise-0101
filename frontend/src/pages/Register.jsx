@@ -38,7 +38,7 @@ export default function Register() {
             <div className="h-12 w-12 rounded-xl bg-white/15 backdrop-blur grid place-items-center"><GraduationCap className="h-6 w-6" /></div>
             <div>
               <div className="font-display font-extrabold text-xl tracking-tight leading-none">GYAN RISE</div>
-              <div className="text-[11px] uppercase tracking-[0.25em] text-[#FED7AA] font-bold mt-1">RANA E-LEARNING</div>
+              <div className="text-[11px] uppercase tracking-[0.25em] text-[#FED7AA] font-bold mt-1">Engr. Singh, E-learning</div>
             </div>
           </div>
           <div>
