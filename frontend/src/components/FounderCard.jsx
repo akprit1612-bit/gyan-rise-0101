@@ -1,5 +1,5 @@
 import React from "react";
-import { GraduationCap, Quote, BadgeCheck } from "lucide-react";
+import { Quote, BadgeCheck } from "lucide-react";
 
 /**
  * FounderCard
@@ -32,11 +32,19 @@ export default function FounderCard({ variant = "default", className = "" }) {
         {/* Identity row */}
         <div className="flex items-center gap-4">
           <div
-            className={`shrink-0 rounded-xl grr-hero-gradient text-white grid place-items-center ${
+            className={`shrink-0 rounded-xl overflow-hidden ring-2 ring-white shadow-md bg-slate-100 ${
               isCompact ? "h-12 w-12" : "h-14 w-14"
             }`}
           >
-            <GraduationCap className={isCompact ? "h-6 w-6" : "h-7 w-7"} />
+            <img
+              src="/founder-256.jpg"
+              srcSet="/founder-128.jpg 128w, /founder-256.jpg 256w, /founder-512.jpg 512w"
+              sizes={isCompact ? "48px" : "56px"}
+              alt="Rana Pratap Singh — Founder & Lead Educator"
+              className="h-full w-full object-cover"
+              loading="lazy"
+              data-testid="founder-photo"
+            />
           </div>
           <div className="min-w-0">
             <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#F97316] font-semibold">
