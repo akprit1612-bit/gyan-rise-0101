@@ -30,6 +30,10 @@ import AdminTestEditor from "@/pages/admin/TestEditor";
 import AdminLiveClasses from "@/pages/admin/LiveClasses";
 import AdminNotifications from "@/pages/admin/Notifications";
 import AdminStudents from "@/pages/admin/Students";
+import AdminDigitalStore from "@/pages/admin/DigitalStore";
+import StudentDigitalStore from "@/pages/student/DigitalStore";
+import DigitalPdfViewer from "@/pages/student/DigitalPdfViewer";
+import Checkout from "@/pages/student/Checkout";
 
 function Guard({ children, role }) {
   const { user } = useAuth();
@@ -174,6 +178,9 @@ function App() {
             <Route path="/videos/:videoId" element={<VideoPlayer />} />
             <Route path="/live-classes" element={<LiveClasses />} />
             <Route path="/recent" element={<RecentlyViewed />} />
+            <Route path="/store" element={<StudentDigitalStore />} />
+            <Route path="/store/view/:pdfId" element={<DigitalPdfViewer />} />
+            <Route path="/checkout" element={<Checkout />} />
             <Route path="/tests/:testId" element={<TestPage />} />
             <Route path="/tests/:testId/result" element={<TestResult />} />
             <Route path="/blocked-access" element={<BlockedAccess />} />
@@ -193,6 +200,7 @@ function App() {
             <Route path="/admin/live-classes" element={<AdminLiveClasses />} />
             <Route path="/admin/notifications" element={<AdminNotifications />} />
             <Route path="/admin/students" element={<AdminStudents />} />
+            <Route path="/admin/digital-store" element={<AdminDigitalStore />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

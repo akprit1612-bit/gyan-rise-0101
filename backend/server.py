@@ -818,6 +818,205 @@ async def delete_note(note_id: str, user: dict = Depends(require_admin)):
     return {"ok": True}
 
 
+# ---------- Digital Store (PDFs) ----------
+class DigitalPdfIn(BaseModel):
+    title: str
+    description: str = ""
+    thumbnail_url: Optional[str] = None
+    drive_link: str
+    category: Optional[str] = None
+    price: float = Field(0, ge=0)
+    currency: str = Field("INR", min_length=3, max_length=3)
+    published: bool = False
+
+
+def _extract_drive_file_id(link: str) -> Optional[str]:
+    # Accept direct file id or full google drive share link
+    if not link:
+        return None
+    # If already an id (simple alnum and - _)
+    import re
+
+    maybe = link.strip()
+    if re.fullmatch(r"[a-zA-Z0-9_-]{10,}", maybe):
+        return maybe
+    # common patterns
+    m = re.search(r"/d/([a-zA-Z0-9_-]{10,})", link)
+    if m:
+        return m.group(1)
+    m = re.search(r"id=([a-zA-Z0-9_-]{10,})", link)
+    if m:
+        return m.group(1)
+    return None
+
+
+@api.get("/digital-store")
+async def list_digital_store(user: dict = Depends(get_current_user)):
+    if user.get("role") == "admin":
+        items = await db.digital_pdfs.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    else:
+        items = await db.digital_pdfs.find({"published": True}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+        # hide drive_file_id from non-admins
+        for it in items:
+            it.pop("drive_file_id", None)
+    return items
+
+
+@api.post("/digital-store")
+async def create_digital_pdf(body: DigitalPdfIn, user: dict = Depends(require_admin)):
+    file_id = _extract_drive_file_id(body.drive_link)
+    if not file_id:
+        raise HTTPException(status_code=400, detail="Invalid Google Drive link")
+    doc = {
+        "id": new_id(),
+        "title": body.title,
+        "description": body.description,
+        "thumbnail_url": body.thumbnail_url,
+        "drive_file_id": file_id,
+        "category": body.category,
+        "price": body.price,
+        "currency": body.currency,
+        "published": bool(body.published),
+        "created_at": now_iso(),
+    }
+    await db.digital_pdfs.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api.put("/digital-store/{pdf_id}")
+async def update_digital_pdf(pdf_id: str, body: DigitalPdfIn, user: dict = Depends(require_admin)):
+    update = body.model_dump()
+    # normalize drive link -> store file id only
+    file_id = _extract_drive_file_id(update.get("drive_link") or "")
+    if not file_id:
+        raise HTTPException(status_code=400, detail="Invalid Google Drive link")
+    update["drive_file_id"] = file_id
+    update.pop("drive_link", None)
+    await db.digital_pdfs.update_one({"id": pdf_id}, {"$set": update})
+    return await db.digital_pdfs.find_one({"id": pdf_id}, {"_id": 0})
+
+
+@api.delete("/digital-store/{pdf_id}")
+async def delete_digital_pdf(pdf_id: str, user: dict = Depends(require_admin)):
+    await db.digital_pdfs.delete_one({"id": pdf_id})
+    await db.purchases.delete_many({"pdf_id": pdf_id})
+    return {"ok": True}
+
+
+@api.post("/digital-store/{pdf_id}/publish")
+async def publish_digital_pdf(pdf_id: str, user: dict = Depends(require_admin)):
+    doc = await db.digital_pdfs.find_one({"id": pdf_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="PDF not found")
+    await db.digital_pdfs.update_one({"id": pdf_id}, {"$set": {"published": True}})
+    return {"ok": True}
+
+
+@api.post("/digital-store/checkout/{pdf_id}")
+async def digital_store_checkout(pdf_id: str, user: dict = Depends(get_current_user)):
+    doc = await db.digital_pdfs.find_one({"id": pdf_id}, {"_id": 0})
+    if not doc or not doc.get("published", False):
+        raise HTTPException(status_code=404, detail="PDF not found")
+    existing = await db.purchases.find_one({"user_id": user["id"], "pdf_id": pdf_id})
+    if existing:
+        return {"ok": True, "already": True}
+    price = int((doc.get("price", 0) or 0) * 100)
+    if price <= 0:
+        raise HTTPException(status_code=400, detail="PDF is free — no checkout required")
+    key_id, key_secret = get_razorpay_keys()
+    short_id = new_id()[:12]
+    payload = {
+        "amount": price,
+        "currency": doc.get("currency", "INR"),
+        "receipt": f"pdf_{short_id}",
+        "payment_capture": 1,
+        "notes": {"pdf_id": pdf_id, "user_id": user["id"]},
+    }
+    async with httpx.AsyncClient(auth=(key_id, key_secret), timeout=30.0) as client:
+        r = await client.post("https://api.razorpay.com/v1/orders", json=payload)
+    if r.status_code != 200 and r.status_code != 201:
+        raise HTTPException(status_code=502, detail=f"Razorpay order creation failed: {r.text}")
+    order = r.json()
+    return {"ok": True, "order": {"id": order.get("id"), "amount": order.get("amount"), "currency": order.get("currency")}, "key_id": key_id}
+
+
+class PaymentVerifyPdfIn(BaseModel):
+    razorpay_payment_id: str
+    razorpay_order_id: str
+    razorpay_signature: str
+    pdf_id: str
+
+
+@api.post("/digital-store/payments/verify")
+async def digital_store_payments_verify(body: PaymentVerifyPdfIn, user: dict = Depends(get_current_user)):
+    key_id, key_secret = get_razorpay_keys()
+    msg = f"{body.razorpay_order_id}|{body.razorpay_payment_id}".encode()
+    expected = hmac.new(key_secret.encode(), msg, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, body.razorpay_signature):
+        raise HTTPException(status_code=400, detail="Invalid payment signature")
+    async with httpx.AsyncClient(auth=(key_id, key_secret), timeout=30.0) as client:
+        resp = await client.get(f"https://api.razorpay.com/v1/payments/{body.razorpay_payment_id}")
+    if resp.status_code != 200:
+        raise HTTPException(status_code=502, detail="Failed to fetch payment details from Razorpay")
+    payinfo = resp.json()
+    payment = {
+        "id": new_id(),
+        "user_id": user["id"],
+        "pdf_id": body.pdf_id,
+        "amount": payinfo.get("amount") / 100.0 if payinfo.get("amount") is not None else None,
+        "currency": payinfo.get("currency"),
+        "status": payinfo.get("status"),
+        "provider": "razorpay",
+        "provider_order_id": body.razorpay_order_id,
+        "provider_payment_id": body.razorpay_payment_id,
+        "provider_signature": body.razorpay_signature,
+        "created_at": now_iso(),
+    }
+    await db.payments.insert_one(dict(payment))
+    purchase = {"id": new_id(), "user_id": user["id"], "pdf_id": body.pdf_id, "payment_id": payment["id"], "created_at": now_iso()}
+    await db.purchases.insert_one(dict(purchase))
+    payment.pop("_id", None)
+    return {"ok": True, "payment": payment, "purchase": purchase}
+
+
+@api.get("/digital-store/purchases/me")
+async def my_pdf_purchases(user: dict = Depends(get_current_user)):
+    items = await db.purchases.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    out = []
+    for p in items:
+        pdf = await db.digital_pdfs.find_one({"id": p["pdf_id"]}, {"_id": 0})
+        if not pdf:
+            continue
+        pdf.pop("drive_file_id", None)
+        out.append({**p, "pdf": pdf})
+    return out
+
+
+@api.get("/digital-store/preview/{pdf_id}")
+async def preview_pdf(pdf_id: str, user: dict = Depends(get_current_user)):
+    pdf = await db.digital_pdfs.find_one({"id": pdf_id}, {"_id": 0})
+    if not pdf or not pdf.get("published", False):
+        raise HTTPException(status_code=404, detail="PDF not found")
+    # Admin bypass
+    if user.get("role") != "admin":
+        purchased = await db.purchases.find_one({"user_id": user["id"], "pdf_id": pdf_id})
+        if not purchased:
+            raise HTTPException(status_code=402, detail="Purchase required to access this PDF")
+    file_id = pdf.get("drive_file_id")
+    if not file_id:
+        raise HTTPException(status_code=500, detail="PDF file not available")
+    # Fetch file from Google Drive (public/shared) via uc?export=download&id=
+    url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        r = await client.get(url)
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail="Failed to fetch PDF from storage")
+    headers = {"Content-Type": "application/pdf", "Cache-Control": "no-store", "Content-Disposition": "inline"}
+    return StarletteResponse(content=r.content, status_code=200, media_type="application/pdf", headers=headers)
+
+
+
 # ---------- Tests / MCQ ----------
 @api.get("/tests")
 async def list_tests(chapter_id: Optional[str] = None, user: dict = Depends(get_current_user)):
