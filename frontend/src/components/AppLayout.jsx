@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const studentNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, testid: "nav-dashboard" },
   { to: "/batches", label: "My Batches", icon: BookOpen, testid: "nav-batches" },
+  { to: "/store", label: "Digital Store", icon: FileText, testid: "nav-store" },
   { to: "/recent", label: "Recently Viewed", icon: History, testid: "nav-recent" },
   { to: "/live-classes", label: "Live Classes", icon: Radio, testid: "nav-live-classes" },
 ];
@@ -35,6 +36,7 @@ const adminNav = [
   { to: "/admin/chapters", label: "Chapters", icon: BookOpen, testid: "nav-admin-chapters" },
   { to: "/admin/videos", label: "Videos", icon: VideoIcon, testid: "nav-admin-videos" },
   { to: "/admin/notes", label: "Notes", icon: FileText, testid: "nav-admin-notes" },
+  { to: "/admin/digital-store", label: "Digital Store", icon: Library, testid: "nav-admin-digital-store" },
   { to: "/admin/tests", label: "MCQ Tests", icon: ClipboardList, testid: "nav-admin-tests" },
   { to: "/admin/live-classes", label: "Live Classes", icon: Radio, testid: "nav-admin-live" },
   { to: "/admin/notifications", label: "Notifications", icon: Bell, testid: "nav-admin-notifications" },

@@ -1834,9 +1834,22 @@ async def seed_content():
     ]
 
     for bdata in batches_data:
+        # Remove any previous seeded batch with same name to ensure deterministic seeding
         existing_batch = await db.batches.find_one({"name": bdata["name"]})
         if existing_batch:
-            continue
+            # cascade delete existing seeded batch and its children
+            bid = existing_batch["id"]
+            subject_ids = [s["id"] async for s in db.subjects.find({"batch_id": bid})]
+            chapter_ids = [c["id"] async for c in db.chapters.find({"subject_id": {"$in": subject_ids}})]
+            await db.batches.delete_one({"id": bid})
+            await db.subjects.delete_many({"batch_id": bid})
+            await db.chapters.delete_many({"subject_id": {"$in": subject_ids}})
+            await db.videos.delete_many({"chapter_id": {"$in": chapter_ids}})
+            await db.notes.delete_many({"chapter_id": {"$in": chapter_ids}})
+            await db.tests.delete_many({"chapter_id": {"$in": chapter_ids}})
+            await db.live_classes.delete_many({"batch_id": bid})
+            await db.enrollments.delete_many({"batch_id": bid})
+        # proceed to insert fresh copy
         b = {"id": new_id(), **bdata, "created_at": now_iso()}
         await db.batches.insert_one(dict(b))
 

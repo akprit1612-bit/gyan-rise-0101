@@ -18,6 +18,11 @@ export default function StudentDigitalStore() {
   const buy = async (id) => {
     try {
       const { data } = await api.post(`/digital-store/checkout/${id}`);
+      if (data?.already) {
+        toast.success("PDF already purchased");
+        navigate(`/store/view/${id}`);
+        return;
+      }
       // frontend should use Razorpay checkout; for simplicity open new tab to handle payment flow
       if (data?.order && data?.key_id) {
         // store order info in sessionStorage for verifier page
@@ -44,11 +49,11 @@ export default function StudentDigitalStore() {
               {it.thumbnail_url && <img src={resolveImage(it.thumbnail_url)} alt="thumb" className="h-36 w-full object-cover rounded-md mb-2" />}
               <div className="font-medium text-slate-900">{it.title}</div>
               <div className="text-sm text-slate-500">{it.category}</div>
-              <div className="mt-2 flex items-center justify-between">
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-lg font-semibold">{(it.price || 0) > 0 ? `${it.currency || 'INR'} ${it.price}` : 'Free'}</div>
-                <div className="flex items-center gap-2">
-                  <Button onClick={() => navigate(`/store/view/${it.id}`)}>View</Button>
-                  <Button onClick={() => buy(it.id)} className="bg-[#1D4ED8] text-white">Buy Now</Button>
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <Button onClick={() => navigate(`/store/view/${it.id}`)} className="min-w-[110px]">View</Button>
+                  <Button onClick={() => buy(it.id)} className="bg-[#1D4ED8] text-white min-w-[110px]">Buy Now</Button>
                 </div>
               </div>
             </div>
