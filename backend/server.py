@@ -481,6 +481,35 @@ async def reset_password(body: ResetPasswordIn):
     return {"ok": True, "message": "Password updated. Please sign in with your new password."}
 
 
+class ChangePasswordIn(BaseModel):
+    current_password: str = Field(min_length=1)
+    new_password: str = Field(min_length=6)
+
+
+@api.post("/auth/change-password")
+async def change_password(body: ChangePasswordIn, user: dict = Depends(get_current_user)):
+    """Authenticated password change.
+
+    Requires the caller's current password (verified against the stored
+    bcrypt hash) before setting a new password. Uses the same hash_password
+    helper the rest of the project uses so existing login flow keeps working.
+    """
+    # Re-fetch the latest password_hash from DB (the dependency-resolved user
+    # is sanitised and does NOT carry the hash).
+    db_user = await db.users.find_one({"id": user["id"]})
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not verify_password(body.current_password, db_user.get("password_hash", "")):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    if body.new_password == body.current_password:
+        raise HTTPException(status_code=400, detail="New password must be different from current password")
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"password_hash": hash_password(body.new_password)}},
+    )
+    return {"ok": True, "message": "Password changed successfully"}
+
+
 @api.get("/auth/me", response_model=UserPublic)
 async def me(user: dict = Depends(get_current_user)):
     return user

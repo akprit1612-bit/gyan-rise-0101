@@ -31,6 +31,7 @@ import AdminLiveClasses from "@/pages/admin/LiveClasses";
 import AdminNotifications from "@/pages/admin/Notifications";
 import AdminStudents from "@/pages/admin/Students";
 import AdminDigitalStore from "@/pages/admin/DigitalStore";
+import AdminSettings from "@/pages/admin/Settings";
 import StudentDigitalStore from "@/pages/student/DigitalStore";
 import DigitalPdfDetail from "@/pages/student/DigitalPdfDetail";
 import DigitalPdfViewer from "@/pages/student/DigitalPdfViewer";
@@ -202,6 +203,7 @@ function App() {
             <Route path="/admin/live-classes" element={<AdminLiveClasses />} />
             <Route path="/admin/notifications" element={<AdminNotifications />} />
             <Route path="/admin/students" element={<AdminStudents />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
             <Route path="/admin/digital-store" element={<AdminDigitalStore />} />
           </Route>
 
