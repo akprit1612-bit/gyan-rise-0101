@@ -20,7 +20,7 @@ export default function StudentDigitalStore() {
       const { data } = await api.post(`/digital-store/checkout/${id}`);
       if (data?.already) {
         toast.success("PDF already purchased");
-        navigate(`/store/view/${id}`);
+        navigate(`/store/read/${id}`);
         return;
       }
       // frontend should use Razorpay checkout; for simplicity open new tab to handle payment flow
@@ -31,7 +31,11 @@ export default function StudentDigitalStore() {
       } else {
         toast.error("Checkout failed");
       }
-    } catch (err) { toast.error("Checkout failed"); }
+    } catch (err) {
+      // Surface backend detail so admins can see e.g. "Razorpay credentials not
+      // configured on server" instead of a generic "Checkout failed".
+      toast.error(err?.response?.data?.detail || "Checkout failed");
+    }
   };
 
   return (

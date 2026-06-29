@@ -856,9 +856,16 @@ async def list_digital_store(user: dict = Depends(get_current_user)):
         items = await db.digital_pdfs.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     else:
         items = await db.digital_pdfs.find({"published": True}, {"_id": 0}).sort("created_at", -1).to_list(1000)
-        # hide drive_file_id from non-admins
+        # hide drive_file_id from non-admins and stamp purchase state
+        purchased_ids = set()
+        if items:
+            pdf_ids = [it["id"] for it in items]
+            cursor = db.purchases.find({"user_id": user["id"], "pdf_id": {"$in": pdf_ids}}, {"pdf_id": 1, "_id": 0})
+            async for p in cursor:
+                purchased_ids.add(p.get("pdf_id"))
         for it in items:
             it.pop("drive_file_id", None)
+            it["is_purchased"] = it["id"] in purchased_ids
     return items
 
 
@@ -1014,6 +1021,26 @@ async def preview_pdf(pdf_id: str, user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=502, detail="Failed to fetch PDF from storage")
     headers = {"Content-Type": "application/pdf", "Cache-Control": "no-store", "Content-Disposition": "inline"}
     return StarletteResponse(content=r.content, status_code=200, media_type="application/pdf", headers=headers)
+
+
+@api.get("/digital-store/{pdf_id}")
+async def get_digital_pdf(pdf_id: str, user: dict = Depends(get_current_user)):
+    """Return a single PDF product's metadata (no PDF content). Used by the product
+    details page so students can see title/description/price/thumbnail/buy state
+    before any preview or purchase. Backend never exposes drive_file_id to non-admins.
+    NOTE: This route is declared AFTER /digital-store/purchases/me and
+    /digital-store/preview/{pdf_id} so FastAPI's path-matching order does not
+    accidentally route 'purchases' or 'preview' as a pdf_id."""
+    is_admin = user.get("role") == "admin"
+    query = {"id": pdf_id} if is_admin else {"id": pdf_id, "published": True}
+    doc = await db.digital_pdfs.find_one(query, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="PDF not found")
+    if not is_admin:
+        doc.pop("drive_file_id", None)
+        purchased = await db.purchases.find_one({"user_id": user["id"], "pdf_id": pdf_id}, {"_id": 0})
+        doc["is_purchased"] = bool(purchased)
+    return doc
 
 
 

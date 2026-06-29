@@ -65,6 +65,22 @@ export default function DigitalPdfViewer() {
 
   useEffect(() => { if (!loading) renderPage(); }, [pageNum]);
 
+  // Deter direct download/print of the rendered PDF: block Ctrl+S / Ctrl+P
+  // while the viewer is focused. Combined with backend purchase enforcement
+  // and pdf.js canvas rendering (no raw blob exposed to the DOM), this keeps
+  // casual users from saving the file.
+  useEffect(() => {
+    const blockSavePrint = (e) => {
+      const k = (e.key || "").toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && (k === "s" || k === "p")) {
+        e.preventDefault();
+        toast.error("Download and print are disabled for this PDF");
+      }
+    };
+    window.addEventListener("keydown", blockSavePrint);
+    return () => window.removeEventListener("keydown", blockSavePrint);
+  }, []);
+
   if (loading) return <Skeleton className="h-screen w-full" />;
   return (
     <div className="h-screen flex flex-col">

@@ -56,9 +56,9 @@ export default function Checkout() {
               toast.success("Payment successful — PDF unlocked");
               // clear session storage
               sessionStorage.removeItem("razorpay_order");
-              navigate(`/store/view/${orderInfo.pdf_id}`);
+              navigate(`/store/read/${orderInfo.pdf_id}`);
             } catch (err) {
-              toast.error("Payment verification failed");
+              toast.error(err?.response?.data?.detail || "Payment verification failed");
             }
           },
           modal: { escape: false },
@@ -69,7 +69,7 @@ export default function Checkout() {
         });
         rzp.open();
       } catch (err) {
-        toast.error('Checkout failed');
+        toast.error(err?.response?.data?.detail || 'Checkout failed');
         navigate(-1);
       } finally {
         setLoading(false);

@@ -32,6 +32,7 @@ import AdminNotifications from "@/pages/admin/Notifications";
 import AdminStudents from "@/pages/admin/Students";
 import AdminDigitalStore from "@/pages/admin/DigitalStore";
 import StudentDigitalStore from "@/pages/student/DigitalStore";
+import DigitalPdfDetail from "@/pages/student/DigitalPdfDetail";
 import DigitalPdfViewer from "@/pages/student/DigitalPdfViewer";
 import Checkout from "@/pages/student/Checkout";
 
@@ -179,7 +180,8 @@ function App() {
             <Route path="/live-classes" element={<LiveClasses />} />
             <Route path="/recent" element={<RecentlyViewed />} />
             <Route path="/store" element={<StudentDigitalStore />} />
-            <Route path="/store/view/:pdfId" element={<DigitalPdfViewer />} />
+            <Route path="/store/view/:pdfId" element={<DigitalPdfDetail />} />
+            <Route path="/store/read/:pdfId" element={<DigitalPdfViewer />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/tests/:testId" element={<TestPage />} />
             <Route path="/tests/:testId/result" element={<TestResult />} />
