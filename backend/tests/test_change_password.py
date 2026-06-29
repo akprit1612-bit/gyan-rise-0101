@@ -21,6 +21,7 @@ from pathlib import Path
 
 # Load backend .env so MONGO_URL/DB_NAME are available when pytest runs from /app
 load_dotenv(Path("/app/backend/.env"))
+load_dotenv(Path("/app/frontend/.env"))
 
 BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 MONGO_URL = os.environ["MONGO_URL"]
@@ -47,7 +48,7 @@ def _hash(pw: str) -> str:
 
 def _make_user(mongo_db, role: str, password: str) -> dict:
     uid = str(uuid.uuid4())
-    email = f"TEST_{role}_{uid[:8]}@pytest.local"
+    email = f"test_{role}_{uid[:8]}@pytest-gyanrise.com"
     doc = {
         "id": uid,
         "email": email,
@@ -197,7 +198,7 @@ class TestRegression:
     def test_forgot_password_returns_200_for_any_email(self):
         r = requests.post(
             f"{API}/auth/forgot-password",
-            json={"email": "does_not_exist_xyz@nope.local"},
+            json={"email": "does_not_exist_xyz@pytest-gyanrise.com"},
         )
         assert r.status_code == 200, r.text
         assert r.json().get("ok") is True
