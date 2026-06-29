@@ -3,11 +3,15 @@ import { api, resolveImage } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { startPdfCheckout } from "@/lib/razorpay";
+import { useAuth } from "@/context/AuthContext";
 
 export default function StudentDigitalStore() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [buyingId, setBuyingId] = useState(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const load = async () => {
     setLoading(true);
@@ -15,27 +19,37 @@ export default function StudentDigitalStore() {
   };
   useEffect(() => { load(); }, []);
 
-  const buy = async (id) => {
-    try {
-      const { data } = await api.post(`/digital-store/checkout/${id}`);
-      if (data?.already) {
-        toast.success("PDF already purchased");
-        navigate(`/store/read/${id}`);
-        return;
-      }
-      // frontend should use Razorpay checkout; for simplicity open new tab to handle payment flow
-      if (data?.order && data?.key_id) {
-        // store order info in sessionStorage for verifier page
-        sessionStorage.setItem("razorpay_order", JSON.stringify({ order: data.order, key_id: data.key_id, pdf_id: id }));
-        window.location.href = `/checkout?pdf_id=${id}`;
-      } else {
-        toast.error("Checkout failed");
-      }
-    } catch (err) {
-      // Surface backend detail so admins can see e.g. "Razorpay credentials not
-      // configured on server" instead of a generic "Checkout failed".
-      toast.error(err?.response?.data?.detail || "Checkout failed");
+  const buy = async (e, item) => {
+    // Prevent any default form/anchor behavior that would cause a page reload.
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+
+    if (item.is_purchased) {
+      toast.success("PDF already purchased");
+      navigate(`/store/read/${item.id}`);
+      return;
     }
+    if (!item.price || item.price <= 0) {
+      navigate(`/store/read/${item.id}`);
+      return;
+    }
+
+    setBuyingId(item.id);
+    await startPdfCheckout({
+      pdf: item,
+      user,
+      onAlready: () => {
+        toast.success("PDF already purchased");
+        navigate(`/store/read/${item.id}`);
+      },
+      onSuccess: () => {
+        toast.success("Payment successful — PDF unlocked");
+        navigate(`/store/read/${item.id}`);
+      },
+      onCancel: () => toast.error("Payment cancelled"),
+      onError: (msg) => toast.error(msg || "Checkout failed"),
+    });
+    setBuyingId(null);
   };
 
   return (
@@ -56,8 +70,23 @@ export default function StudentDigitalStore() {
               <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-lg font-semibold">{(it.price || 0) > 0 ? `${it.currency || 'INR'} ${it.price}` : 'Free'}</div>
                 <div className="flex flex-wrap gap-2 justify-end">
-                  <Button onClick={() => navigate(`/store/view/${it.id}`)} className="min-w-[110px]">View</Button>
-                  <Button onClick={() => buy(it.id)} className="bg-[#1D4ED8] text-white min-w-[110px]">Buy Now</Button>
+                  <Button
+                    type="button"
+                    onClick={() => navigate(`/store/view/${it.id}`)}
+                    className="min-w-[110px]"
+                    data-testid={`store-view-btn-${it.id}`}
+                  >
+                    View
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={(e) => buy(e, it)}
+                    disabled={buyingId === it.id}
+                    className="bg-[#1D4ED8] text-white min-w-[110px]"
+                    data-testid={`store-buy-btn-${it.id}`}
+                  >
+                    {buyingId === it.id ? "Processing…" : "Buy Now"}
+                  </Button>
                 </div>
               </div>
             </div>

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ArrowLeft, ShoppingCart, BookOpen, Lock, Check } from "lucide-react";
+import { startPdfCheckout } from "@/lib/razorpay";
+import { useAuth } from "@/context/AuthContext";
 
 /**
  * Product details page for a single Digital Store PDF.
@@ -18,6 +20,7 @@ import { ArrowLeft, ShoppingCart, BookOpen, Lock, Check } from "lucide-react";
 export default function DigitalPdfDetail() {
   const { pdfId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(false);
@@ -41,7 +44,12 @@ export default function DigitalPdfDetail() {
 
   const isFree = !item?.price || item.price <= 0;
 
-  const handleBuy = async () => {
+  const handleBuy = async (e) => {
+    // Defensive: prevent any default form/button submit behavior that could
+    // cause a page reload (the symptom user reported on the Digital Store).
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+
     if (!item) return;
     if (item.is_purchased) {
       navigate(`/store/read/${pdfId}`);
@@ -52,32 +60,23 @@ export default function DigitalPdfDetail() {
       navigate(`/store/read/${pdfId}`);
       return;
     }
+
     setBuying(true);
-    try {
-      const { data } = await api.post(`/digital-store/checkout/${pdfId}`);
-      if (data?.already) {
+    await startPdfCheckout({
+      pdf: item,
+      user,
+      onAlready: () => {
         toast.success("PDF already purchased");
         navigate(`/store/read/${pdfId}`);
-        return;
-      }
-      if (data?.order && data?.key_id) {
-        sessionStorage.setItem(
-          "razorpay_order",
-          JSON.stringify({ order: data.order, key_id: data.key_id, pdf_id: pdfId })
-        );
-        navigate(`/checkout?pdf_id=${pdfId}`);
-      } else {
-        toast.error("Checkout failed — please try again");
-      }
-    } catch (err) {
-      // Surface the backend's detail message (e.g. "Razorpay credentials not
-      // configured on server") instead of a generic error, so admins can see
-      // exactly why and the app keeps working when keys are missing.
-      const detail = err?.response?.data?.detail || "Checkout failed — please try again";
-      toast.error(detail);
-    } finally {
-      setBuying(false);
-    }
+      },
+      onSuccess: () => {
+        toast.success("Payment successful — PDF unlocked");
+        navigate(`/store/read/${pdfId}`);
+      },
+      onCancel: () => toast.error("Payment cancelled"),
+      onError: (msg) => toast.error(msg || "Checkout failed"),
+    });
+    setBuying(false);
   };
 
   if (loading) {
@@ -182,6 +181,7 @@ export default function DigitalPdfDetail() {
               </>
             ) : (
               <Button
+                type="button"
                 onClick={handleBuy}
                 disabled={buying}
                 className="bg-[#1D4ED8] hover:bg-[#1E40AF] text-white min-w-[180px]"
