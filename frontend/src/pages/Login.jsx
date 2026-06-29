@@ -65,8 +65,8 @@ export default function Login() {
         <div className="absolute inset-0 bg-gradient-to-tr from-[#0B1E55]/80 via-transparent to-[#F97316]/40" />
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-white/15 backdrop-blur grid place-items-center">
-              <GraduationCap className="h-6 w-6" />
+            <div className="h-12 w-12 rounded-xl bg-white grid place-items-center overflow-hidden shadow-sm">
+              <img src="/logo.png" alt="GYAN RISE" className="h-full w-full object-contain" data-testid="brand-logo-login-hero" />
             </div>
             <div>
               <div className="font-display font-extrabold text-xl tracking-tight leading-none">GYAN RISE</div>
@@ -105,8 +105,8 @@ export default function Login() {
       <div className="flex items-center justify-center p-6 sm:p-12 lg:col-span-2">
         <div className="w-full max-w-md">
           <div className="lg:hidden mb-8 flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl grr-hero-gradient grid place-items-center text-white">
-              <GraduationCap className="h-6 w-6" />
+            <div className="h-12 w-12 rounded-xl bg-white grid place-items-center overflow-hidden border border-slate-100 shadow-sm">
+              <img src="/logo.png" alt="GYAN RISE" className="h-full w-full object-contain" data-testid="brand-logo-login-mobile" />
             </div>
             <div>
               <div className="font-display font-extrabold text-lg tracking-tight leading-none text-slate-900">GYAN RISE</div>

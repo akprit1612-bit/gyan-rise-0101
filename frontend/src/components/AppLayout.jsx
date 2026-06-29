@@ -85,8 +85,8 @@ export default function AppLayout() {
       >
         <div className="h-16 flex items-center justify-between px-5 border-b border-slate-200">
           <div className="flex items-center gap-2.5">
-            <div className="h-10 w-10 rounded-lg grr-hero-gradient grid place-items-center text-white shadow-sm">
-              <GraduationCap className="h-5 w-5" />
+            <div className="h-10 w-10 rounded-lg overflow-hidden bg-white grid place-items-center shadow-sm border border-slate-100">
+              <img src="/logo.png" alt="GYAN RISE" className="h-full w-full object-contain" data-testid="brand-logo-sidebar" />
             </div>
             <div>
               <div className="font-display font-extrabold tracking-tight text-[15px] leading-none text-slate-900">GYAN RISE</div>

@@ -50,8 +50,8 @@ export default function AdminLogin() {
 
       <div className="relative z-10 w-full max-w-md bg-slate-900/90 backdrop-blur border border-slate-800 rounded-2xl p-8 shadow-2xl">
         <div className="flex items-center gap-3 mb-6">
-          <div className="h-11 w-11 rounded-xl bg-[#1D4ED8] grid place-items-center text-white">
-            <ShieldCheck className="h-5 w-5" />
+          <div className="h-11 w-11 rounded-xl bg-white grid place-items-center overflow-hidden shadow-md">
+            <img src="/logo.png" alt="GYAN RISE" className="h-full w-full object-contain" data-testid="brand-logo-admin-login" />
           </div>
           <div>
             <div className="font-display font-extrabold text-lg tracking-tight text-white leading-none">GYAN RISE</div>

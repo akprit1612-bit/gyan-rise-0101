@@ -35,7 +35,7 @@ export default function Register() {
         <div className="absolute inset-0 bg-gradient-to-br from-[#0B1E55]/80 via-transparent to-[#F97316]/40" />
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-white/15 backdrop-blur grid place-items-center"><GraduationCap className="h-6 w-6" /></div>
+            <div className="h-12 w-12 rounded-xl bg-white grid place-items-center overflow-hidden shadow-sm"><img src="/logo.png" alt="GYAN RISE" className="h-full w-full object-contain" data-testid="brand-logo-register-hero" /></div>
             <div>
               <div className="font-display font-extrabold text-xl tracking-tight leading-none">GYAN RISE</div>
               <div className="text-[11px] uppercase tracking-[0.25em] text-[#FED7AA] font-bold mt-1">Engr. RP Singh, E-learning</div>
