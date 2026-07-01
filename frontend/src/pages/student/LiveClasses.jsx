@@ -53,9 +53,10 @@ export default function LiveClasses() {
                     key={active.id}
                     src={toYouTubeEmbed(active.youtube_url)}
                     title={active.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share"
                     sandbox="allow-scripts allow-same-origin allow-presentation"
                     allowFullScreen
+                    referrerPolicy="strict-origin-when-cross-origin"
                     className="absolute inset-0 h-full w-full"
                   />
                   {/* Title-bar click trap — discourages "Watch on YouTube" navigation

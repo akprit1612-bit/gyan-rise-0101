@@ -12,6 +12,7 @@ import bcrypt
 import jwt
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Literal
+from urllib.parse import parse_qs, urlencode, urlparse
 
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Response, WebSocket, WebSocketDisconnect, UploadFile, File
 from starlette.middleware.cors import CORSMiddleware
@@ -90,6 +91,71 @@ def new_id() -> str:
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+YT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
+
+
+def extract_youtube_video_id(raw_url: Optional[str]) -> Optional[str]:
+    if not raw_url:
+        return None
+    if YT_ID_RE.match(raw_url):
+        return raw_url
+
+    try:
+        normalized = raw_url if "://" in raw_url else f"https://{raw_url}"
+        parsed = urlparse(normalized)
+    except Exception:
+        return None
+
+    host = parsed.hostname.lower() if parsed.hostname else ""
+    if not host:
+        return None
+
+    if host in {"youtu.be", "www.youtu.be"} or host.endswith(".youtu.be"):
+        parts = [p for p in parsed.path.split("/") if p]
+        candidate = parts[0] if parts else ""
+        return candidate if YT_ID_RE.match(candidate) else None
+
+    if "youtube" not in host:
+        return None
+
+    if parsed.query:
+        query = parse_qs(parsed.query)
+        v = query.get("v", [""])[0]
+        if YT_ID_RE.match(v):
+            return v
+
+    parts = [p for p in parsed.path.split("/") if p]
+    for i in range(len(parts) - 1):
+        if parts[i] in {"live", "embed", "shorts", "v"}:
+            candidate = parts[i + 1]
+            if YT_ID_RE.match(candidate):
+                return candidate
+
+    for part in parts:
+        if YT_ID_RE.match(part):
+            return part
+
+    return None
+
+
+def build_youtube_embed_url(raw_url: Optional[str], origin: Optional[str] = None) -> Optional[str]:
+    video_id = extract_youtube_video_id(raw_url)
+    if not video_id:
+        return raw_url
+
+    params = {
+        "rel": "0",
+        "modestbranding": "1",
+        "playsinline": "1",
+        "enablejsapi": "1",
+    }
+    if origin:
+        params["origin"] = origin
+
+    query = urlencode(params)
+    return f"https://www.youtube.com/embed/{video_id}?{query}"
 
 
 # Firebase Admin integration (initialized after logger is configured)
@@ -1301,7 +1367,9 @@ async def list_live_classes(batch_id: Optional[str] = None, user: dict = Depends
 
 @api.post("/live-classes")
 async def create_live_class(body: LiveClassIn, user: dict = Depends(require_admin)):
-    doc = {"id": new_id(), **body.model_dump(), "created_at": now_iso()}
+    payload = body.model_dump()
+    payload["youtube_url"] = build_youtube_embed_url(payload.get("youtube_url")) or payload.get("youtube_url")
+    doc = {"id": new_id(), **payload, "created_at": now_iso()}
     await db.live_classes.insert_one(doc)
     doc.pop("_id", None)
     try:
@@ -1321,7 +1389,9 @@ async def create_live_class(body: LiveClassIn, user: dict = Depends(require_admi
 
 @api.put("/live-classes/{lc_id}")
 async def update_live_class(lc_id: str, body: LiveClassIn, user: dict = Depends(require_admin)):
-    await db.live_classes.update_one({"id": lc_id}, {"$set": body.model_dump()})
+    payload = body.model_dump()
+    payload["youtube_url"] = build_youtube_embed_url(payload.get("youtube_url")) or payload.get("youtube_url")
+    await db.live_classes.update_one({"id": lc_id}, {"$set": payload})
     return await db.live_classes.find_one({"id": lc_id}, {"_id": 0})
 
 

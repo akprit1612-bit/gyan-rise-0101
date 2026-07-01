@@ -67,9 +67,10 @@ export default function VideoPlayer() {
             <iframe
               src={embed}
               title={video.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share"
               sandbox="allow-scripts allow-same-origin allow-presentation"
               allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
               className="absolute inset-0 h-full w-full"
             />
             {/* Title-bar click trap — see LiveClasses.jsx for rationale */}

@@ -56,38 +56,39 @@ export function formatApiError(err) {
 }
 
 // YouTube URL → embed URL
-// Robustly extracts a video ID from any common YouTube URL shape:
+// Robustly extracts a video ID from common YouTube URL shapes:
 //   - https://www.youtube.com/watch?v=ID
-//   - https://youtu.be/ID
 //   - https://www.youtube.com/live/ID
+//   - https://youtu.be/ID
 //   - https://www.youtube.com/embed/ID
 //   - https://www.youtube.com/shorts/ID
 //   - https://m.youtube.com/...   (mobile)
-//   - URLs with query params like ?si=... or ?feature=share
 // Returns the original URL unchanged if it isn't recognizable (so non-YT URLs still play).
 const YT_ID = /^[A-Za-z0-9_-]{11}$/;
 
 function extractYouTubeId(rawUrl) {
   if (!rawUrl) return "";
-  // Direct 11-char ID
   if (YT_ID.test(rawUrl)) return rawUrl;
+
   let u;
   try {
-    u = new URL(rawUrl);
+    const normalized = rawUrl.includes("://") ? rawUrl : `https://${rawUrl}`;
+    u = new URL(normalized);
   } catch {
     return "";
   }
+
   const host = u.hostname.toLowerCase();
-  if (!host.includes("youtu")) return "";
-  // youtu.be/<id>
+  if (!host.includes("youtu") && !host.includes("youtube")) return "";
+
   if (host === "youtu.be" || host.endsWith(".youtu.be")) {
     const id = u.pathname.split("/").filter(Boolean)[0] || "";
     return YT_ID.test(id) ? id : "";
   }
-  // ?v=<id>
+
   const v = u.searchParams.get("v");
   if (v && YT_ID.test(v)) return v;
-  // /live/<id>, /embed/<id>, /shorts/<id>, /v/<id>
+
   const parts = u.pathname.split("/").filter(Boolean);
   for (let i = 0; i < parts.length - 1; i++) {
     if (["live", "embed", "shorts", "v"].includes(parts[i])) {
@@ -95,16 +96,38 @@ function extractYouTubeId(rawUrl) {
       if (YT_ID.test(candidate)) return candidate;
     }
   }
-  // Fallback: any segment that matches the 11-char pattern
+
   const guess = parts.find((p) => YT_ID.test(p));
   return guess || "";
 }
 
-export function toYouTubeEmbed(url) {
+function normalizeOrigin(origin) {
+  if (!origin) return "";
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return "";
+  }
+}
+
+export function toYouTubeEmbed(url, origin) {
   if (!url) return "";
   const id = extractYouTubeId(url);
   if (!id) return url;
-  return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
+
+  const resolvedOrigin = normalizeOrigin(origin || (typeof window !== "undefined" ? window.location.origin : ""));
+  const params = new URLSearchParams({
+    rel: "0",
+    modestbranding: "1",
+    playsinline: "1",
+    enablejsapi: "1",
+  });
+
+  if (resolvedOrigin) {
+    params.set("origin", resolvedOrigin);
+  }
+
+  return `https://www.youtube.com/embed/${id}?${params.toString()}`;
 }
 
 export function formatDuration(seconds) {
