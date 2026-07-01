@@ -5,6 +5,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
 import os
+import re
 import uuid
 import logging
 import bcrypt
@@ -992,7 +993,33 @@ def _build_drive_download_candidates(file_id: str) -> list[str]:
         f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t",
         f"https://drive.google.com/uc?export=download&id={file_id}&confirm=ts",
         f"https://drive.google.com/uc?id={file_id}&export=download",
+        f"https://drive.google.com/file/d/{file_id}/view?usp=sharing",
     ]
+
+
+def _looks_like_pdf(content_type: str, content: bytes) -> bool:
+    ct = (content_type or "").split(";")[0].strip().lower()
+    if ct == "application/pdf":
+        return True
+    if ct in {"application/octet-stream", "application/x-download"}:
+        return content.startswith(b"%PDF") or b"%PDF" in content[:1024]
+    return content.startswith(b"%PDF") or b"%PDF" in content[:1024]
+
+
+def _extract_drive_download_url(html_text: str) -> Optional[str]:
+    if not html_text:
+        return None
+    for pattern in [
+        r"https://drive\.google\.com/uc\?export=download[^\"'\s>]+",
+        r"/uc\?export=download[^\"'\s>]+",
+    ]:
+        match = re.search(pattern, html_text)
+        if match:
+            candidate = match.group(0)
+            if candidate.startswith("/"):
+                return f"https://drive.google.com{candidate}"
+            return candidate
+    return None
 
 
 async def _download_drive_pdf(file_id: str) -> tuple[bytes, str]:
@@ -1000,7 +1027,7 @@ async def _download_drive_pdf(file_id: str) -> tuple[bytes, str]:
         raise ValueError("PDF file is not available")
 
     candidates = _build_drive_download_candidates(file_id)
-    async with httpx.AsyncClient(timeout=60.0, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"}) as client:
+    async with httpx.AsyncClient(timeout=90.0, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"}) as client:
         for url in candidates:
             try:
                 response = await client.get(url)
@@ -1010,8 +1037,18 @@ async def _download_drive_pdf(file_id: str) -> tuple[bytes, str]:
                 if not content:
                     continue
                 content_type = (response.headers.get("content-type") or "application/pdf").split(";")[0].strip().lower()
-                if content_type == "application/pdf" or content.startswith(b"%PDF") or b"%PDF" in content[:1024]:
+                if _looks_like_pdf(content_type, content):
                     return content, content_type or "application/pdf"
+
+                if content_type in {"text/html", "application/xhtml+xml"}:
+                    alt_url = _extract_drive_download_url(response.text)
+                    if alt_url and alt_url != url:
+                        alt_response = await client.get(alt_url)
+                        if alt_response.status_code < 400:
+                            alt_content = alt_response.content or b""
+                            alt_content_type = (alt_response.headers.get("content-type") or "application/pdf").split(";")[0].strip().lower()
+                            if _looks_like_pdf(alt_content_type, alt_content):
+                                return alt_content, alt_content_type or "application/pdf"
             except Exception as exc:
                 logger.warning("Drive download attempt failed for file_id=%s url=%s error=%s", file_id, url, exc)
 
