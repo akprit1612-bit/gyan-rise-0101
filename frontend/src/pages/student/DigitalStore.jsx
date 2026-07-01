@@ -19,6 +19,15 @@ export default function StudentDigitalStore() {
   };
   useEffect(() => { load(); }, []);
 
+  const markPurchased = (id) => {
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, is_purchased: true } : it)));
+  };
+
+  const openPurchasedPdf = (item) => {
+    if (!item?.id) return;
+    navigate(`/store/read/${item.id}`);
+  };
+
   const buy = async (e, item) => {
     // Prevent any default form/anchor behavior that would cause a page reload.
     if (e && e.preventDefault) e.preventDefault();
@@ -26,7 +35,7 @@ export default function StudentDigitalStore() {
 
     if (item.is_purchased) {
       toast.success("PDF already purchased");
-      navigate(`/store/read/${item.id}`);
+      openPurchasedPdf(item);
       return;
     }
     if (!item.price || item.price <= 0) {
@@ -39,12 +48,14 @@ export default function StudentDigitalStore() {
       pdf: item,
       user,
       onAlready: () => {
+        markPurchased(item.id);
         toast.success("PDF already purchased");
-        navigate(`/store/read/${item.id}`);
+        openPurchasedPdf(item);
       },
       onSuccess: () => {
+        markPurchased(item.id);
         toast.success("Payment successful — PDF unlocked");
-        navigate(`/store/read/${item.id}`);
+        openPurchasedPdf(item);
       },
       onCancel: () => toast.error("Payment cancelled"),
       onError: (msg) => toast.error(msg || "Checkout failed"),

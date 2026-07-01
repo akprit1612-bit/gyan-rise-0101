@@ -984,8 +984,46 @@ class PaymentVerifyPdfIn(BaseModel):
     pdf_id: str
 
 
+def _build_drive_download_candidates(file_id: str) -> list[str]:
+    if not file_id:
+        return []
+    return [
+        f"https://drive.google.com/uc?export=download&id={file_id}",
+        f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t",
+        f"https://drive.google.com/uc?export=download&id={file_id}&confirm=ts",
+        f"https://drive.google.com/uc?id={file_id}&export=download",
+    ]
+
+
+async def _download_drive_pdf(file_id: str) -> tuple[bytes, str]:
+    if not file_id:
+        raise ValueError("PDF file is not available")
+
+    candidates = _build_drive_download_candidates(file_id)
+    async with httpx.AsyncClient(timeout=60.0, follow_redirects=True, headers={"User-Agent": "Mozilla/5.0"}) as client:
+        for url in candidates:
+            try:
+                response = await client.get(url)
+                if response.status_code >= 400:
+                    continue
+                content = response.content or b""
+                if not content:
+                    continue
+                content_type = (response.headers.get("content-type") or "application/pdf").split(";")[0].strip().lower()
+                if content_type == "application/pdf" or content.startswith(b"%PDF") or b"%PDF" in content[:1024]:
+                    return content, content_type or "application/pdf"
+            except Exception as exc:
+                logger.warning("Drive download attempt failed for file_id=%s url=%s error=%s", file_id, url, exc)
+
+    raise RuntimeError("Unable to download PDF from storage")
+
+
 @api.post("/digital-store/payments/verify")
 async def digital_store_payments_verify(body: PaymentVerifyPdfIn, user: dict = Depends(get_current_user)):
+    existing_purchase = await db.purchases.find_one({"user_id": user["id"], "pdf_id": body.pdf_id}, {"_id": 0})
+    if existing_purchase:
+        return {"ok": True, "already": True, "purchase": existing_purchase}
+
     key_id, key_secret = get_razorpay_keys()
     msg = f"{body.razorpay_order_id}|{body.razorpay_payment_id}".encode()
     expected = hmac.new(key_secret.encode(), msg, hashlib.sha256).hexdigest()
@@ -1042,14 +1080,19 @@ async def preview_pdf(pdf_id: str, user: dict = Depends(get_current_user)):
     file_id = pdf.get("drive_file_id")
     if not file_id:
         raise HTTPException(status_code=500, detail="PDF file not available")
-    # Fetch file from Google Drive (public/shared) via uc?export=download&id=
-    url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        r = await client.get(url)
-    if r.status_code != 200:
-        raise HTTPException(status_code=502, detail="Failed to fetch PDF from storage")
-    headers = {"Content-Type": "application/pdf", "Cache-Control": "no-store", "Content-Disposition": "inline"}
-    return StarletteResponse(content=r.content, status_code=200, media_type="application/pdf", headers=headers)
+    try:
+        pdf_bytes, content_type = await _download_drive_pdf(file_id)
+    except Exception as exc:
+        logger.exception("Failed to fetch PDF preview for pdf_id=%s user_id=%s error=%s", pdf_id, user.get("id"), exc)
+        raise HTTPException(status_code=502, detail="Failed to fetch PDF from storage") from exc
+
+    safe_name = (pdf.get("title") or "document").replace(" ", "_")
+    headers = {
+        "Content-Type": content_type or "application/pdf",
+        "Cache-Control": "no-store",
+        "Content-Disposition": f'inline; filename="{safe_name}.pdf"',
+    }
+    return StarletteResponse(content=pdf_bytes, status_code=200, media_type=content_type or "application/pdf", headers=headers)
 
 
 @api.get("/digital-store/{pdf_id}")

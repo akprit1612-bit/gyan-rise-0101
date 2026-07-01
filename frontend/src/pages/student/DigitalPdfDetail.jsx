@@ -66,10 +66,12 @@ export default function DigitalPdfDetail() {
       pdf: item,
       user,
       onAlready: () => {
+        setItem((prev) => (prev ? { ...prev, is_purchased: true } : prev));
         toast.success("PDF already purchased");
         navigate(`/store/read/${pdfId}`);
       },
       onSuccess: () => {
+        setItem((prev) => (prev ? { ...prev, is_purchased: true } : prev));
         toast.success("Payment successful — PDF unlocked");
         navigate(`/store/read/${pdfId}`);
       },
